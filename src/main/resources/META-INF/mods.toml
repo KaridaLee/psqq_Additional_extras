@@ -4,7 +4,7 @@ license="MIT License"
 
 [[mods]]
 modId="psqq_item"
-version="1.1"
+version="1.0.0"
 displayName="破碎千秋 额外添加"
 description='''
 添加超载材料
@@ -21,11 +21,5 @@ description='''
     modId="minecraft"
     mandatory=true
     versionRange="[1.20.1,1.21)"
-    ordering="NONE"
-    side="BOTH"
-[[dependencies.psqq_item]]
-    modId="create"
-    mandatory=true
-    versionRange="[0.5.1.j,)"
     ordering="NONE"
     side="BOTH"

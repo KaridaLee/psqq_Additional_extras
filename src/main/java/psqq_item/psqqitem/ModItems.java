@@ -1,4 +1,4 @@
-package psqq_item.psqq_item;
+package psqq_item.psqqitem;
 
 import net.minecraft.world.item.Item;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -22,6 +22,9 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> CHARGED_UNKNOWN_STONE = ITEMS.register("charged_unknown_stone",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> INCOMPLETE_OVERLOAD_PRECISION_MECHANISM = ITEMS.register("incomplete_overload_precision_mechanism",
             () -> new Item(new Item.Properties()));
 
     // 注册方法

@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "psqq_item:item/incomplete_overload_precision_mechanism"
+  }
+}

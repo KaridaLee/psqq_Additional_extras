@@ -1,4 +1,4 @@
-package psqq_item.psqq_item;
+package psqq_item.psqqitem;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -22,6 +22,7 @@ public class ModCreativeTabs {
                         output.accept(ModItems.OVERLOAD_PRECISION_MECHANISM.get());
                         output.accept(ModItems.UNKNOWN_STONE.get());
                         output.accept(ModItems.CHARGED_UNKNOWN_STONE.get());
+                        output.accept(ModItems.INCOMPLETE_OVERLOAD_PRECISION_MECHANISM.get());
                     })
                     .build());
 
