@@ -39,7 +39,41 @@ jobs:
     - name: Build with Gradle
       run: gradle build
       
-    # 提取JAR文件并重命名
+    # 改进的版本号提取方法，去掉了默认版本号
+    - name: Extract mod version
+      id: mod_version
+      run: |
+        # 首先输出build.gradle的内容以便调试
+        echo "=== build.gradle content ==="
+        cat build.gradle
+        echo "=== end of build.gradle ==="
+        
+        # 使用gradle命令直接打印版本号
+        echo "Fetching version using Gradle..."
+        MOD_VERSION=$(./gradlew properties | grep "version:" | awk '{print $2}')
+        
+        # 如果gradle方式失败，尝试多种模式进行匹配
+        if [ -z "$MOD_VERSION" ] || [ "$MOD_VERSION" = "null" ]; then
+          echo "Trying regex extraction..."
+          # 尝试各种可能的版本声明格式
+          MOD_VERSION=$(grep -o "version\s*=\s*[\"'][^\"']*[\"']" build.gradle | sed -E "s/version\s*=\s*[\"']([^\"']*)[\"']/\1/" || \
+                       grep -o "version\s*[\"'][^\"']*[\"']" build.gradle | sed -E "s/version\s*[\"']([^\"']*)[\"']/\1/" || \
+                       grep -o "project.version\s*=\s*[\"'][^\"']*[\"']" build.gradle | sed -E "s/project.version\s*=\s*[\"']([^\"']*)[\"']/\1/")
+        fi
+        
+        # 检查是否成功提取到版本号
+        if [ -z "$MOD_VERSION" ]; then
+          echo "Failed to extract version from build.gradle"
+          exit 1
+        fi
+        
+        echo "MOD_VERSION=$MOD_VERSION"
+        echo "mod_version=$MOD_VERSION" >> $GITHUB_OUTPUT
+      
+    - name: Build with Gradle
+      run: gradle build
+      
+    # 提取JAR文件并重命名（包含版本号）
     - name: Extract and rename JAR file
       id: extract-jar
       run: |
@@ -50,10 +84,12 @@ jobs:
           exit 1
         fi
         echo "Found JAR file: $JAR_FILE"
-        cp "$JAR_FILE" jar-output/psqq_Additional_extras.jar
-        echo "jar_path=jar-output/psqq_Additional_extras.jar" >> $GITHUB_OUTPUT
+        MOD_VERSION="${{ steps.mod_version.outputs.mod_version }}"
+        echo "Using mod version: $MOD_VERSION"
+        cp "$JAR_FILE" "jar-output/psqq_Additional_extras-$MOD_VERSION.jar"
+        echo "jar_path=jar-output/psqq_Additional_extras-$MOD_VERSION.jar" >> $GITHUB_OUTPUT
         
-    # 生成版本号 (基于时间戳和提交SHA)
+    # 生成版本号
     - name: Generate version
       id: generate_version
       run: |
@@ -66,9 +102,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.generate_version.outputs.version }}
-        name: Build ${{ steps.generate_version.outputs.version }}
+        name: "Build ${{ steps.generate_version.outputs.version }} (Mod v${{ steps.mod_version.outputs.mod_version }})"
         files: ${{ steps.extract-jar.outputs.jar_path }}
         draft: false
         prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
