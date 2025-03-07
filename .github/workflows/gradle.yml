@@ -36,31 +36,25 @@ jobs:
     - name: Build with Gradle
       run: gradle build
       
-    # 找出主JAR文件并提取文件名
-    - name: Find main JAR file
-      id: find-jar
+    # 提取JAR文件并重命名为psqq_Additional_extras.jar
+    - name: Extract and rename JAR file
+      id: extract-jar
       run: |
+        mkdir -p jar-output
         JAR_FILE=$(find build/libs -name "*.jar" -not -name "*-sources.jar" -not -name "*-dev.jar" | head -n 1)
+        if [ -z "$JAR_FILE" ]; then
+          echo "No JAR file found!"
+          exit 1
+        fi
         echo "Found JAR file: $JAR_FILE"
-        echo "jar_path=$JAR_FILE" >> $GITHUB_OUTPUT
-        JAR_NAME=$(basename "$JAR_FILE")
-        echo "jar_name=$JAR_NAME" >> $GITHUB_OUTPUT
-        
-    # 上传JAR文件作为构建产物，使用提取的文件名
+        cp "$JAR_FILE" jar-output/psqq_Additional_extras.jar
+        echo "Original JAR file was copied to jar-output/psqq_Additional_extras.jar"
+        ls -la jar-output/
+      
+    # 上传重命名后的JAR文件作为构建产物
     - name: Upload JAR artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ steps.find-jar.outputs.jar_name }}
-        path: ${{ steps.find-jar.outputs.jar_path }}
-        
-    # 如果是标签推送，则创建Release并上传JAR文件
-    - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: ${{ steps.find-jar.outputs.jar_path }}
-        draft: false
-        prerelease: false
-        generate_release_notes: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: psqq_Additional_extras.jar
+        path: jar-output/psqq_Additional_extras.jar
+        if-no-files-found: error
