@@ -146,11 +146,9 @@ dependencies {
 
 processResources {
     inputs.property "version", project.version
-    inputs.property "mod_id", 'psqq_item'
-
-    filesMatching("META-INF/mods.toml") {
-        expand "version": project.version,
-                "mod_id": 'psqq_item'
+    
+    filesMatching('META-INF/mods.toml') {
+        expand 'version': project.version
     }
 }
 
