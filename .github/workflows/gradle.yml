@@ -39,7 +39,22 @@ jobs:
     - name: Build with Gradle
       run: gradle build
       
-    # 提取JAR文件并重命名
+    # 从build.gradle提取mod版本号
+    - name: Extract mod version
+      id: mod_version
+      run: |
+        # 尝试不同的模式来匹配版本
+        VERSION=$(grep -oP "(?<=version\s*=\s*['\"]).*?(?=['\"])" build.gradle || \
+                 grep -oP "(?<=version\s*=\s*)['\"].*?['\"]" build.gradle | tr -d "\"'" || \
+                 grep -oP "(?<=project\.version\s*=\s*['\"]).*?(?=['\"])" build.gradle || \
+                 echo "unknown")
+        echo "Found mod version: $VERSION"
+        echo "mod_version=$VERSION" >> $GITHUB_OUTPUT
+      
+    - name: Build with Gradle
+      run: gradle build
+      
+    # 提取JAR文件并重命名（包含版本号）
     - name: Extract and rename JAR file
       id: extract-jar
       run: |
@@ -50,10 +65,10 @@ jobs:
           exit 1
         fi
         echo "Found JAR file: $JAR_FILE"
-        cp "$JAR_FILE" jar-output/psqq_Additional_extras.jar
-        echo "jar_path=jar-output/psqq_Additional_extras.jar" >> $GITHUB_OUTPUT
+        cp "$JAR_FILE" "jar-output/psqq_Additional_extras-${{ steps.mod_version.outputs.mod_version }}.jar"
+        echo "jar_path=jar-output/psqq_Additional_extras-${{ steps.mod_version.outputs.mod_version }}.jar" >> $GITHUB_OUTPUT
         
-    # 生成版本号 (基于时间戳和提交SHA)
+    # 生成版本号 (包含mod版本)
     - name: Generate version
       id: generate_version
       run: |
@@ -61,14 +76,12 @@ jobs:
         SHORT_SHA=$(git rev-parse --short HEAD)
         echo "version=v${TIMESTAMP}-${SHORT_SHA}" >> $GITHUB_OUTPUT
       
-    # 创建Release并上传JAR文件
+    # 创建Release并上传JAR文件（Release名称包含mod版本）
     - name: Create Release and Upload JAR
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.generate_version.outputs.version }}
-        name: Build ${{ steps.generate_version.outputs.version }}
+        name: "Build ${{ steps.generate_version.outputs.version }} (Mod v${{ steps.mod_version.outputs.mod_version }})"
         files: ${{ steps.extract-jar.outputs.jar_path }}
         draft: false
         prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
