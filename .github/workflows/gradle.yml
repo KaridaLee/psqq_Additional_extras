@@ -10,9 +10,11 @@ name: Java CI with Gradle
 on:
   push:
     branches: [ master ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ master ]
-  workflow_dispatch:  # 允许手动触发工作流
+  workflow_dispatch:
 
 jobs:
   build:
@@ -23,34 +25,36 @@ jobs:
     - name: Set up JDK
       uses: actions/setup-java@v3
       with:
-        java-version: '17'  # 根据你的Forge版本选择合适的Java版本
+        java-version: '17'
         distribution: 'temurin'
-    
-    - name: Check for Gradle Wrapper
-      run: |
-        if [ ! -f "./gradlew" ]; then
-          echo "Gradle Wrapper (gradlew) not found. Generating wrapper..."
-          gradle wrapper
-        fi
         
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-      
-    - name: Cache Gradle packages
-      uses: actions/cache@v3
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v2
       with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
-          
-    - name: Build with Gradle
-      run: ./gradlew build
+        gradle-version: '7.6.2'
       
-    - name: Upload build artifacts
+    - name: Build with Gradle
+      run: gradle build
+      
+    # 提取JAR文件并重命名为psqq_Additional_extras.jar
+    - name: Extract and rename JAR file
+      id: extract-jar
+      run: |
+        mkdir -p jar-output
+        JAR_FILE=$(find build/libs -name "*.jar" -not -name "*-sources.jar" -not -name "*-dev.jar" | head -n 1)
+        if [ -z "$JAR_FILE" ]; then
+          echo "No JAR file found!"
+          exit 1
+        fi
+        echo "Found JAR file: $JAR_FILE"
+        cp "$JAR_FILE" jar-output/psqq_Additional_extras.jar
+        echo "Original JAR file was copied to jar-output/psqq_Additional_extras.jar"
+        ls -la jar-output/
+      
+    # 上传重命名后的JAR文件作为构建产物
+    - name: Upload JAR artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Package
-        path: build/libs/*.jar
+        name: psqq_Additional_extras.jar
+        path: jar-output/psqq_Additional_extras.jar
+        if-no-files-found: error
