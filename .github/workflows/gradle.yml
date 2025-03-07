@@ -9,10 +9,12 @@ name: Java CI with Gradle
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main, master ]
+    tags:
+      - 'v*'
   pull_request:
-    branches: [ master ]
-  workflow_dispatch:  # 允许手动触发工作流
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -23,46 +25,39 @@ jobs:
     - name: Set up JDK
       uses: actions/setup-java@v3
       with:
-        java-version: '17'  # 根据你的Forge版本选择合适的Java版本
+        java-version: '17'
         distribution: 'temurin'
-    
-    - name: Check for Gradle Wrapper
-      run: |
-        if [ ! -f "./gradlew" ]; then
-          echo "Gradle Wrapper (gradlew) not found. Generating wrapper..."
-          gradle wrapper
-        fi
         
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v2
       
-    - name: Cache Gradle packages
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
-          
     - name: Build with Gradle
-      run: ./gradlew build
+      run: gradle build
       
-    - name: Upload artifact for debugging
+    # 找出主JAR文件并提取文件名
+    - name: Find main JAR file
+      id: find-jar
+      run: |
+        JAR_FILE=$(find build/libs -name "*.jar" -not -name "*-sources.jar" -not -name "*-dev.jar" | head -n 1)
+        echo "Found JAR file: $JAR_FILE"
+        echo "jar_path=$JAR_FILE" >> $GITHUB_OUTPUT
+        JAR_NAME=$(basename "$JAR_FILE")
+        echo "jar_name=$JAR_NAME" >> $GITHUB_OUTPUT
+        
+    # 上传JAR文件作为构建产物，使用提取的文件名
+    - name: Upload JAR artifact
       uses: actions/upload-artifact@v4
       with:
-        name: mod-jar
-        path: build/libs/*.jar
-
+        name: ${{ steps.find-jar.outputs.jar_name }}
+        path: ${{ steps.find-jar.outputs.jar_path }}
+        
+    # 如果是标签推送，则创建Release并上传JAR文件
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/')
-      id: create_release
       uses: softprops/action-gh-release@v1
       with:
-        files: build/libs/*.jar
+        files: ${{ steps.find-jar.outputs.jar_path }}
         draft: false
         prerelease: false
-        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
