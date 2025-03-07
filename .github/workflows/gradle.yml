@@ -36,7 +36,7 @@ jobs:
     - name: Build with Gradle
       run: gradle build
       
-    # 提取JAR文件并重命名为psqq_Additional_extras.jar
+    # 提取JAR文件并重命名
     - name: Extract and rename JAR file
       id: extract-jar
       run: |
@@ -48,13 +48,24 @@ jobs:
         fi
         echo "Found JAR file: $JAR_FILE"
         cp "$JAR_FILE" jar-output/psqq_Additional_extras.jar
-        echo "Original JAR file was copied to jar-output/psqq_Additional_extras.jar"
-        ls -la jar-output/
+        echo "jar_path=jar-output/psqq_Additional_extras.jar" >> $GITHUB_OUTPUT
+        
+    # 生成版本号 (基于时间戳和提交SHA)
+    - name: Generate version
+      id: generate_version
+      run: |
+        TIMESTAMP=$(date +'%Y%m%d%H%M%S')
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        echo "version=v${TIMESTAMP}-${SHORT_SHA}" >> $GITHUB_OUTPUT
       
-    # 上传重命名后的JAR文件作为构建产物
-    - name: Upload JAR artifact
-      uses: actions/upload-artifact@v4
+    # 创建Release并上传JAR文件
+    - name: Create Release and Upload JAR
+      uses: softprops/action-gh-release@v1
       with:
-        name: psqq_Additional_extras.jar
-        path: jar-output/psqq_Additional_extras.jar
-        if-no-files-found: error
+        tag_name: ${{ steps.generate_version.outputs.version }}
+        name: Build ${{ steps.generate_version.outputs.version }}
+        files: ${{ steps.extract-jar.outputs.jar_path }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
