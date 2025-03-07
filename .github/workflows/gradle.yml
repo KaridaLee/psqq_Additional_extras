@@ -49,8 +49,20 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew build
       
-    - name: Upload build artifacts
+    - name: Upload artifact for debugging
       uses: actions/upload-artifact@v4
       with:
-        name: Package
+        name: mod-jar
         path: build/libs/*.jar
+
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: build/libs/*.jar
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
