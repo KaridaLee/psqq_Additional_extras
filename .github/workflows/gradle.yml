@@ -100,9 +100,8 @@ jobs:
         echo "Before update:"
         cat "$MODS_TOML"
     
-        # 更新版本行
-        # 这个命令会查找包含version=的行并替换它
-        sed -i -E "s/(version[[:space:]]*=[[:space:]]*\")[^\"]*(\")/$1$MOD_VERSION$2/" "$MODS_TOML"
+        # 更新版本行 - 修正后的命令
+        sed -i -E "s/version=\"[^\"]*\"/version=\"$MOD_VERSION\"/" "$MODS_TOML"
     
         # 显示更新后的内容
         echo "After update:"
