@@ -3,7 +3,7 @@ Specification-Title: psqq_item
 Specification-Vendor: psqq_server
 Specification-Version: 1
 Implementation-Title: psqq_item
-Implementation-Version: 1.0.0
+Implementation-Version: 1.0.2
 Implementation-Vendor: psqq_server
-Implementation-Timestamp: 2025-03-07T20:07:04+0800
+Implementation-Timestamp: 2025-03-07T22:32:36+0800
 

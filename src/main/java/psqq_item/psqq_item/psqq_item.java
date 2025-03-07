@@ -4,6 +4,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 
 @Mod(psqq_item.MOD_ID)
 public class psqq_item {
@@ -19,8 +20,16 @@ public class psqq_item {
         ModItems.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
 
+        // 注册通用设置事件，用于初始化网络
+        modEventBus.addListener(this::commonSetup);
 
         // 注册到Forge事件总线
         MinecraftForge.EVENT_BUS.register(this);
+    }
+
+    // 通用设置方法，在客户端和服务端都会执行
+    private void commonSetup(final FMLCommonSetupEvent event) {
+        // 初始化网络
+        event.enqueueWork(ModNetwork::init);
     }
 }

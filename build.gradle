@@ -4,7 +4,7 @@ plugins {
 
 
 group = 'psqq_item'
-version = '1.0.0'
+version = '1.0.2'
 
 java {
     archivesBaseName = 'psqq_item'
@@ -142,6 +142,16 @@ dependencies {
     // For more info...
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
+}
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "mod_id", 'psqq_item'
+
+    filesMatching("META-INF/mods.toml") {
+        expand "version": project.version,
+                "mod_id": 'psqq_item'
+    }
 }
 
 // Example for how to get properties into the manifest for reading at runtime.
