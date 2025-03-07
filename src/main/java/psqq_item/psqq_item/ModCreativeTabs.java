@@ -1,4 +1,4 @@
-package psqq_item.psqqitem;
+package psqq_item.psqq_item;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -20,9 +20,9 @@ public class ModCreativeTabs {
                         // 添加您的物品到物品栏
                         output.accept(ModItems.OVERLOAD_ELECTRON_TUBE.get());
                         output.accept(ModItems.OVERLOAD_PRECISION_MECHANISM.get());
+                        output.accept(ModItems.INCOMPLETE_OVERLOAD_PRECISION_MECHANISM.get());
                         output.accept(ModItems.UNKNOWN_STONE.get());
                         output.accept(ModItems.CHARGED_UNKNOWN_STONE.get());
-                        output.accept(ModItems.INCOMPLETE_OVERLOAD_PRECISION_MECHANISM.get());
                     })
                     .build());
 

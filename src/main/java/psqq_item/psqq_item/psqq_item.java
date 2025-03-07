@@ -1,4 +1,4 @@
-package psqq_item.psqqitem;
+package psqq_item.psqq_item;
 
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
