@@ -32,14 +32,6 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-
-    - name: Update mods.toml version
-      run: |
-        MOD_VERSION="${{ steps.mod_version.outputs.mod_version }}"
-        echo "Updating mods.toml with version: $MOD_VERSION"
-        sed -i "s/version=\"\${version}\"/version=\"$MOD_VERSION\"/" src/main/resources/META-INF/mods.toml
-        # 验证更改
-        cat src/main/resources/META-INF/mods.toml
         
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
@@ -89,6 +81,32 @@ jobs:
         
         echo "MOD_VERSION=$MOD_VERSION"
         echo "mod_version=$MOD_VERSION" >> $GITHUB_OUTPUT
+
+    - name: Update mods.toml version
+      run: |
+        MOD_VERSION="${{ steps.mod_version.outputs.mod_version }}"
+        echo "Updating mods.toml with version: $MOD_VERSION"
+    
+        # 找到mods.toml文件
+        MODS_TOML=$(find src -name "mods.toml" | head -1)
+        if [ -z "$MODS_TOML" ]; then
+          echo "mods.toml file not found!"
+          exit 1
+        fi
+    
+        echo "Found mods.toml at: $MODS_TOML"
+    
+        # 显示更新前的内容
+        echo "Before update:"
+        cat "$MODS_TOML"
+    
+        # 更新版本行
+        # 这个命令会查找包含version=的行并替换它
+        sed -i -E "s/(version[[:space:]]*=[[:space:]]*\")[^\"]*(\")/$1$MOD_VERSION$2/" "$MODS_TOML"
+    
+        # 显示更新后的内容
+        echo "After update:"
+        cat "$MODS_TOML"
     
     # 构建项目
     - name: Build with Gradle
