@@ -49,37 +49,31 @@ jobs:
         echo "=== build.gradle content ==="
         cat build.gradle
         echo "=== end of build.gradle ==="
-        
-        # 尝试从各种格式获取版本号
-        VERSION_FORMATS=(
-          "version\s*=\s*[\"']([^\"']*)[\"']"
-          "version\s*[\"']([^\"']*)[\"']"
-          "project.version\s*=\s*[\"']([^\"']*)[\"']"
-          "mod_version\s*=\s*[\"']([^\"']*)[\"']"
-        )
-        
-        for FORMAT in "${VERSION_FORMATS[@]}"; do
-          MOD_VERSION=$(grep -P "$FORMAT" build.gradle | head -1 | sed -E "s/$FORMAT/\1/")
-          if [ ! -z "$MOD_VERSION" ]; then
-            echo "Found version using pattern: $FORMAT"
-            echo "Version: $MOD_VERSION"
-            break
-          fi
-        done
-        
-        # 如果上面的方法失败，尝试使用Gradle
+    
+        # 更精确的版本提取，使用多种模式尝试
+        VERSION_PATTERN="version\s*=\s*['\"]([^'\"]*)['\"]"
+        MOD_VERSION=$(grep -P "$VERSION_PATTERN" build.gradle | head -1 | sed -E "s/$VERSION_PATTERN/\1/")
+    
+        # 如果上面的方法失败，尝试其他常见格式
         if [ -z "$MOD_VERSION" ]; then
-          echo "Trying Gradle properties extraction..."
+          echo "Trying alternative pattern..."
+          VERSION_PATTERN="project.version\s*=\s*['\"]([^'\"]*)['\"]"
+          MOD_VERSION=$(grep -P "$VERSION_PATTERN" build.gradle | head -1 | sed -E "s/$VERSION_PATTERN/\1/")
+        fi
+    
+        # 如果仍然失败，尝试gradle properties命令
+        if [ -z "$MOD_VERSION" ]; then
+          echo "Trying gradle properties..."
           MOD_VERSION=$(./gradlew properties | grep "version:" | awk '{print $2}')
         fi
-        
+    
         # 确保我们有版本号
         if [ -z "$MOD_VERSION" ]; then
           echo "Failed to extract version from build.gradle!"
           exit 1
         fi
-        
-        echo "MOD_VERSION=$MOD_VERSION"
+    
+        echo "Extracted MOD_VERSION=$MOD_VERSION"
         echo "mod_version=$MOD_VERSION" >> $GITHUB_OUTPUT
     
     # 构建项目
