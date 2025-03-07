@@ -17,13 +17,15 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # 这给予了写入仓库内容的权限，包括创建releases
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
     
     - name: Set up JDK
       uses: actions/setup-java@v3
@@ -36,56 +38,92 @@ jobs:
       with:
         gradle-version: '7.6.2'
       
-    - name: Build with Gradle
-      run: gradle build
-      
-    # 提取版本号但不修改JAR文件名
+    # 首先获取版本号，确保正确
     - name: Extract mod version
       id: mod_version
       run: |
-        # 首先输出build.gradle的内容以便调试
         echo "=== build.gradle content ==="
         cat build.gradle
         echo "=== end of build.gradle ==="
         
-        # 使用gradle命令直接打印版本号
-        echo "Fetching version using Gradle..."
-        MOD_VERSION=$(./gradlew properties | grep "version:" | awk '{print $2}')
+        # 尝试从各种格式获取版本号
+        VERSION_FORMATS=(
+          "version\s*=\s*[\"']([^\"']*)[\"']"
+          "version\s*[\"']([^\"']*)[\"']"
+          "project.version\s*=\s*[\"']([^\"']*)[\"']"
+          "mod_version\s*=\s*[\"']([^\"']*)[\"']"
+        )
         
-        # 如果gradle方式失败，尝试多种模式进行匹配
-        if [ -z "$MOD_VERSION" ] || [ "$MOD_VERSION" = "null" ]; then
-          echo "Trying regex extraction..."
-          # 尝试各种可能的版本声明格式
-          MOD_VERSION=$(grep -o "version\s*=\s*[\"'][^\"']*[\"']" build.gradle | sed -E "s/version\s*=\s*[\"']([^\"']*)[\"']/\1/" || \
-                       grep -o "version\s*[\"'][^\"']*[\"']" build.gradle | sed -E "s/version\s*[\"']([^\"']*)[\"']/\1/" || \
-                       grep -o "project.version\s*=\s*[\"'][^\"']*[\"']" build.gradle | sed -E "s/project.version\s*=\s*[\"']([^\"']*)[\"']/\1/")
+        for FORMAT in "${VERSION_FORMATS[@]}"; do
+          MOD_VERSION=$(grep -P "$FORMAT" build.gradle | head -1 | sed -E "s/$FORMAT/\1/")
+          if [ ! -z "$MOD_VERSION" ]; then
+            echo "Found version using pattern: $FORMAT"
+            echo "Version: $MOD_VERSION"
+            break
+          fi
+        done
+        
+        # 如果上面的方法失败，尝试使用Gradle
+        if [ -z "$MOD_VERSION" ]; then
+          echo "Trying Gradle properties extraction..."
+          MOD_VERSION=$(./gradlew properties | grep "version:" | awk '{print $2}')
         fi
         
-        # 检查是否成功提取到版本号
+        # 确保我们有版本号
         if [ -z "$MOD_VERSION" ]; then
-          echo "Failed to extract version from build.gradle"
+          echo "Failed to extract version from build.gradle!"
           exit 1
         fi
         
         echo "MOD_VERSION=$MOD_VERSION"
         echo "mod_version=$MOD_VERSION" >> $GITHUB_OUTPUT
+    
+    # 单次构建，避免重复构建
+    - name: Build with Gradle
+      run: ./gradlew build
       
-    # 找到JAR文件但不重命名
-    - name: Find JAR file
-      id: find_jar
+    # 重命名文件并维护其完整性
+    - name: Extract and rename JAR file
+      id: extract-jar
       run: |
+        mkdir -p jar-output
+        
+        # 获取主JAR文件
         JAR_FILE=$(find build/libs -name "*.jar" -not -name "*-sources.jar" -not -name "*-dev.jar" | head -n 1)
+        
         if [ -z "$JAR_FILE" ]; then
           echo "No JAR file found!"
           exit 1
         fi
-        echo "Found JAR file: $JAR_FILE"
-        echo "jar_path=$JAR_FILE" >> $GITHUB_OUTPUT
-        # 获取文件名而不是路径
-        JAR_FILENAME=$(basename "$JAR_FILE")
-        echo "jar_filename=$JAR_FILENAME" >> $GITHUB_OUTPUT
         
-    # 生成版本号
+        # 获取版本号
+        MOD_VERSION="${{ steps.mod_version.outputs.mod_version }}"
+        echo "Found JAR file: $JAR_FILE"
+        echo "Using mod version: $MOD_VERSION"
+        
+        # 重命名但不修改内容
+        OUTPUT_JAR="jar-output/psqq_Additional_extras-$MOD_VERSION.jar"
+        cp "$JAR_FILE" "$OUTPUT_JAR"
+        
+        # 验证复制是否成功
+        if [ ! -f "$OUTPUT_JAR" ]; then
+          echo "Failed to copy JAR file!"
+          exit 1
+        fi
+        
+        # 检查文件大小是否一致，确保完整性
+        ORIG_SIZE=$(stat -c%s "$JAR_FILE")
+        NEW_SIZE=$(stat -c%s "$OUTPUT_JAR")
+        
+        if [ "$ORIG_SIZE" != "$NEW_SIZE" ]; then
+          echo "Warning: File sizes don't match! Original: $ORIG_SIZE, New: $NEW_SIZE"
+        else
+          echo "File integrity verified by size check: $NEW_SIZE bytes"
+        fi
+        
+        echo "jar_path=$OUTPUT_JAR" >> $GITHUB_OUTPUT
+        
+    # 生成Release版本标签
     - name: Generate version
       id: generate_version
       run: |
@@ -93,12 +131,12 @@ jobs:
         SHORT_SHA=$(git rev-parse --short HEAD)
         echo "version=v${TIMESTAMP}-${SHORT_SHA}" >> $GITHUB_OUTPUT
       
-    # 创建Release并上传原始JAR文件，但在Release名称中包含mod版本号
+    # 创建Release
     - name: Create Release and Upload JAR
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.generate_version.outputs.version }}
         name: "Build ${{ steps.generate_version.outputs.version }} (Mod v${{ steps.mod_version.outputs.mod_version }})"
-        files: ${{ steps.find_jar.outputs.jar_path }}
+        files: ${{ steps.extract-jar.outputs.jar_path }}
         draft: false
         prerelease: false
