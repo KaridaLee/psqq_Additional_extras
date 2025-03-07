@@ -144,10 +144,11 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 }
 
+// 在文件中添加或修改processResources块
 processResources {
     inputs.property "version", project.version
     
-    filesMatching('META-INF/mods.toml') {
+    filesMatching('**/mods.toml') {
         expand 'version': project.version
     }
 }
