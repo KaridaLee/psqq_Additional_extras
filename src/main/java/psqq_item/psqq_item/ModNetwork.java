@@ -6,9 +6,8 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public class ModNetwork {
-    // 使用从 build.gradle 生成的版本信息
-    private static final String PROTOCOL_VERSION = ModLoadingContext.get().getActiveContainer()
-            .getModInfo().getVersion().toString();
+    // 硬编码版本号
+    private static final String PROTOCOL_VERSION = "1.0.2";
 
     // 创建网络通道
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
