@@ -43,7 +43,7 @@ jobs:
       run: ./gradlew build
       
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@latest
       with:
-        name: Package
-        path: build/libs/*.jar
+       name: Package
+       path: build/libs/*.jar
