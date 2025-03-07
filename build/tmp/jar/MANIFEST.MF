@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Specification-Title: psqq_item
+Specification-Vendor: psqq_server
+Specification-Version: 1
+Implementation-Title: psqq_item
+Implementation-Version: 1.0-SNAPSHOT
+Implementation-Vendor: psqq_server
+Implementation-Timestamp: 2025-03-06T22:20:13+0800
+
