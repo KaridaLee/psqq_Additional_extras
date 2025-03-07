@@ -16,6 +16,9 @@ on:
     branches: [ master ]
   workflow_dispatch:
 
+permissions:
+  contents: write  # 这给予了写入仓库内容的权限，包括创建releases
+
 jobs:
   build:
     runs-on: ubuntu-latest
