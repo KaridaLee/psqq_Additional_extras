@@ -39,7 +39,7 @@ jobs:
     - name: Build with Gradle
       run: gradle build
       
-    # 改进的版本号提取方法，去掉了默认版本号
+    # 提取版本号但不修改JAR文件名
     - name: Extract mod version
       id: mod_version
       run: |
@@ -70,24 +70,20 @@ jobs:
         echo "MOD_VERSION=$MOD_VERSION"
         echo "mod_version=$MOD_VERSION" >> $GITHUB_OUTPUT
       
-    - name: Build with Gradle
-      run: gradle build
-      
-    # 提取JAR文件并重命名（包含版本号）
-    - name: Extract and rename JAR file
-      id: extract-jar
+    # 找到JAR文件但不重命名
+    - name: Find JAR file
+      id: find_jar
       run: |
-        mkdir -p jar-output
         JAR_FILE=$(find build/libs -name "*.jar" -not -name "*-sources.jar" -not -name "*-dev.jar" | head -n 1)
         if [ -z "$JAR_FILE" ]; then
           echo "No JAR file found!"
           exit 1
         fi
         echo "Found JAR file: $JAR_FILE"
-        MOD_VERSION="${{ steps.mod_version.outputs.mod_version }}"
-        echo "Using mod version: $MOD_VERSION"
-        cp "$JAR_FILE" "jar-output/psqq_Additional_extras-$MOD_VERSION.jar"
-        echo "jar_path=jar-output/psqq_Additional_extras-$MOD_VERSION.jar" >> $GITHUB_OUTPUT
+        echo "jar_path=$JAR_FILE" >> $GITHUB_OUTPUT
+        # 获取文件名而不是路径
+        JAR_FILENAME=$(basename "$JAR_FILE")
+        echo "jar_filename=$JAR_FILENAME" >> $GITHUB_OUTPUT
         
     # 生成版本号
     - name: Generate version
@@ -97,12 +93,12 @@ jobs:
         SHORT_SHA=$(git rev-parse --short HEAD)
         echo "version=v${TIMESTAMP}-${SHORT_SHA}" >> $GITHUB_OUTPUT
       
-    # 创建Release并上传JAR文件
+    # 创建Release并上传原始JAR文件，但在Release名称中包含mod版本号
     - name: Create Release and Upload JAR
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.generate_version.outputs.version }}
         name: "Build ${{ steps.generate_version.outputs.version }} (Mod v${{ steps.mod_version.outputs.mod_version }})"
-        files: ${{ steps.extract-jar.outputs.jar_path }}
+        files: ${{ steps.find_jar.outputs.jar_path }}
         draft: false
         prerelease: false
