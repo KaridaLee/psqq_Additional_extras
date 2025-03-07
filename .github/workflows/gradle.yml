@@ -38,7 +38,11 @@ jobs:
       with:
         gradle-version: '7.6.2'
       
-    # 首先获取版本号，确保正确
+    # 添加执行权限
+    - name: Grant execute permission for gradlew
+      run: chmod +x ./gradlew
+      
+    # 获取版本号
     - name: Extract mod version
       id: mod_version
       run: |
@@ -78,11 +82,11 @@ jobs:
         echo "MOD_VERSION=$MOD_VERSION"
         echo "mod_version=$MOD_VERSION" >> $GITHUB_OUTPUT
     
-    # 单次构建，避免重复构建
+    # 构建项目
     - name: Build with Gradle
       run: ./gradlew build
       
-    # 重命名文件并维护其完整性
+    # 重命名文件
     - name: Extract and rename JAR file
       id: extract-jar
       run: |
@@ -109,16 +113,6 @@ jobs:
         if [ ! -f "$OUTPUT_JAR" ]; then
           echo "Failed to copy JAR file!"
           exit 1
-        fi
-        
-        # 检查文件大小是否一致，确保完整性
-        ORIG_SIZE=$(stat -c%s "$JAR_FILE")
-        NEW_SIZE=$(stat -c%s "$OUTPUT_JAR")
-        
-        if [ "$ORIG_SIZE" != "$NEW_SIZE" ]; then
-          echo "Warning: File sizes don't match! Original: $ORIG_SIZE, New: $NEW_SIZE"
-        else
-          echo "File integrity verified by size check: $NEW_SIZE bytes"
         fi
         
         echo "jar_path=$OUTPUT_JAR" >> $GITHUB_OUTPUT
