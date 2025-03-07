@@ -81,39 +81,14 @@ jobs:
         
         echo "MOD_VERSION=$MOD_VERSION"
         echo "mod_version=$MOD_VERSION" >> $GITHUB_OUTPUT
-
-    - name: Update mods.toml version
-      run: |
-        MOD_VERSION="${{ steps.mod_version.outputs.mod_version }}"
-        echo "Updating mods.toml with version: $MOD_VERSION"
-    
-        # 找到mods.toml文件
-        MODS_TOML=$(find src -name "mods.toml" | head -1)
-        if [ -z "$MODS_TOML" ]; then
-          echo "mods.toml file not found!"
-          exit 1
-        fi
-    
-        echo "Found mods.toml at: $MODS_TOML"
-    
-        # 显示更新前的内容
-        echo "Before update:"
-        cat "$MODS_TOML"
-    
-        # 更新版本行 - 修正后的命令
-        sed -i -E "s/version=\"[^\"]*\"/version=\"$MOD_VERSION\"/" "$MODS_TOML"
-    
-        # 显示更新后的内容
-        echo "After update:"
-        cat "$MODS_TOML"
     
     # 构建项目
     - name: Build with Gradle
       run: ./gradlew build
       
-    # 重命名文件
-    - name: Extract and rename JAR file
-      id: extract-jar
+    # 获取JAR文件并添加版本号到文件名后
+    - name: Process JAR file
+      id: process-jar
       run: |
         mkdir -p jar-output
         
@@ -125,13 +100,17 @@ jobs:
           exit 1
         fi
         
-        # 获取版本号
+        # 获取版本号和原始文件名
         MOD_VERSION="${{ steps.mod_version.outputs.mod_version }}"
+        ORIGINAL_FILENAME=$(basename "$JAR_FILE")
+        FILENAME_WITHOUT_EXT="${ORIGINAL_FILENAME%.jar}"
+        
         echo "Found JAR file: $JAR_FILE"
+        echo "Original filename: $ORIGINAL_FILENAME"
         echo "Using mod version: $MOD_VERSION"
         
-        # 重命名但不修改内容
-        OUTPUT_JAR="jar-output/psqq_Additional_extras-$MOD_VERSION.jar"
+        # 创建新文件名: 原始文件名-版本号.jar
+        OUTPUT_JAR="jar-output/${FILENAME_WITHOUT_EXT}-${MOD_VERSION}.jar"
         cp "$JAR_FILE" "$OUTPUT_JAR"
         
         # 验证复制是否成功
@@ -146,7 +125,7 @@ jobs:
     - name: Generate version
       id: generate_version
       run: |
-        TIMESTAMP=$(date +'%Y%m%d%H%M%S')
+        TIMESTAMP=$(date +'%Y%m%d')
         SHORT_SHA=$(git rev-parse --short HEAD)
         echo "version=v${TIMESTAMP}-${SHORT_SHA}" >> $GITHUB_OUTPUT
       
@@ -156,6 +135,6 @@ jobs:
       with:
         tag_name: ${{ steps.generate_version.outputs.version }}
         name: "Build ${{ steps.generate_version.outputs.version }} (Mod v${{ steps.mod_version.outputs.mod_version }})"
-        files: ${{ steps.extract-jar.outputs.jar_path }}
+        files: ${{ steps.process-jar.outputs.jar_path }}
         draft: false
         prerelease: false
