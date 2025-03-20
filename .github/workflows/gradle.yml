@@ -85,34 +85,33 @@ jobs:
       id: process-jar
       run: |
         mkdir -p jar-output
-        
+    
         # 获取主JAR文件
         JAR_FILE=$(find build/libs -name "*.jar" -not -name "*-sources.jar" -not -name "*-dev.jar" | head -n 1)
-        
+    
         if [ -z "$JAR_FILE" ]; then
           echo "No JAR file found!"
           exit 1
         fi
-        
+    
         # 获取版本号和原始文件名
         MOD_VERSION="${{ steps.mod_version.outputs.mod_version }}"
         ORIGINAL_FILENAME=$(basename "$JAR_FILE")
-        FILENAME_WITHOUT_EXT="${ORIGINAL_FILENAME%.jar}"
-        
+    
         echo "Found JAR file: $JAR_FILE"
         echo "Original filename: $ORIGINAL_FILENAME"
         echo "Using mod version: $MOD_VERSION"
-        
-        # 创建新文件名: 原始文件名-版本号.jar
-        OUTPUT_JAR="jar-output/${FILENAME_WITHOUT_EXT}-${MOD_VERSION}.jar"
+    
+        # 直接使用原始JAR文件，确保其版本号正确
+        OUTPUT_JAR="jar-output/$ORIGINAL_FILENAME"
         cp "$JAR_FILE" "$OUTPUT_JAR"
-        
+    
         # 验证复制是否成功
         if [ ! -f "$OUTPUT_JAR" ]; then
           echo "Failed to copy JAR file!"
           exit 1
         fi
-        
+    
         echo "jar_path=$OUTPUT_JAR" >> $GITHUB_OUTPUT
         
     # 生成Release版本标签
