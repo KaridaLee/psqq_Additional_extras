@@ -6,6 +6,7 @@ plugins {
 group = 'psqq_item'
 version = '1.0.4'
 
+
 java {
     archivesBaseName = 'psqq_item'
     toolchain.languageVersion = JavaLanguageVersion.of(17)
