@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "psqq_item:block/infinite_sink" },
+    "facing=east": { "model": "psqq_item:block/infinite_sink", "y": 90 },
+    "facing=south": { "model": "psqq_item:block/infinite_sink", "y": 180 },
+    "facing=west": { "model": "psqq_item:block/infinite_sink", "y": 270 }
+  }
+}

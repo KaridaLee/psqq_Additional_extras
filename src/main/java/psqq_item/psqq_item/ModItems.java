@@ -21,8 +21,12 @@ public class ModItems {
     public static final RegistryObject<Item> UNKNOWN_STONE = ITEMS.register("unknown_stone",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CHARGED_UNKNOWN_STONE = ITEMS.register("charged_unknown_stone",
+    public static final RegistryObject<Item> OVERLOAD_SHEET_METAL = ITEMS.register("overload_sheet_metal",
             () -> new Item(new Item.Properties()));
+
+    // 替换为自定义的 ChargedUnknownStoneItem 类
+    public static final RegistryObject<Item> CHARGED_UNKNOWN_STONE = ITEMS.register("charged_unknown_stone",
+            () -> new ChargedUnknownStoneItem(new Item.Properties()));
 
     public static final RegistryObject<Item> INCOMPLETE_OVERLOAD_PRECISION_MECHANISM = ITEMS.register("incomplete_overload_precision_mechanism",
             () -> new Item(new Item.Properties()));

@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "QQQ",
+    "QPQ",
+    "QQQ"
+  ],
+  "key": {
+    "Q": {
+      "item": "ae2:matter_ball"
+    },
+    "P": {
+      "item": "minecraft:pointed_dripstone"
+    }
+  },
+  "result": {
+    "item": "psqq_item:unknown_stone",
+    "count": 1
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "parent": "minecraft:block/orientable_with_bottom",
+  "textures": {
+    "bottom": "psqq_item:block/infinite_sink_end",
+    "front": "psqq_item:block/infinite_sink_front",
+    "particle": "psqq_item:block/infinite_sink_side",
+    "side": "psqq_item:block/infinite_sink_side",
+    "top": "psqq_item:block/infinite_sink_end"
+  }
+}

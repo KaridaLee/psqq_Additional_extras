@@ -18,6 +18,8 @@ public class psqq_item {
 
         // 注册物品和创造模式物品栏
         ModItems.register(modEventBus);
+        ModBlocks.register(modEventBus); // 添加方块注册
+        ModBlockEntities.register(modEventBus); // 添加方块实体注册
         ModCreativeTabs.register(modEventBus);
 
         // 注册通用设置事件，用于初始化网络

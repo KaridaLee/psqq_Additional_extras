@@ -19,10 +19,12 @@ public class ModCreativeTabs {
                     .displayItems((parameters, output) -> {
                         // 添加您的物品到物品栏
                         output.accept(ModItems.OVERLOAD_ELECTRON_TUBE.get());
+                        output.accept(ModItems.OVERLOAD_SHEET_METAL.get());
                         output.accept(ModItems.OVERLOAD_PRECISION_MECHANISM.get());
                         output.accept(ModItems.INCOMPLETE_OVERLOAD_PRECISION_MECHANISM.get());
                         output.accept(ModItems.UNKNOWN_STONE.get());
                         output.accept(ModItems.CHARGED_UNKNOWN_STONE.get());
+                        output.accept(ModBlocks.INFINITE_SINK.get());
                     })
                     .build());
 

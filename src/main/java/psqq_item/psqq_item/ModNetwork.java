@@ -7,7 +7,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 
 public class ModNetwork {
     // 硬编码版本号
-    private static final String PROTOCOL_VERSION = "1.0.2";
+    private static final String PROTOCOL_VERSION = "1.0.4";
 
     // 创建网络通道
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
