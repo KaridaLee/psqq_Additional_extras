@@ -7,14 +7,14 @@
   ],
   "key": {
     "Q": {
-      "item": "mekanism:pellet_antimatter"
+      "item": "ae2:matter_ball"
     },
     "P": {
       "item": "minecraft:pointed_dripstone"
     }
   },
   "result": {
-    "item": "psqq_item.unknown_stone",
+    "item": "psqq_item:unknown_stone",
     "count": 1
   }
 }
