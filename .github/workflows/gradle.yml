@@ -38,10 +38,16 @@ jobs:
       with:
         gradle-version: '7.6.2'
       
-    # 添加执行权限
+    # 添加执行权限 (只需要一次)
     - name: Grant execute permission for gradlew
       run: chmod +x ./gradlew
-      
+    
+    # 清理缓存
+    - name: Clean Gradle Cache
+      run: |
+        ./gradlew clean
+        rm -rf ~/.gradle/caches/
+    
     # 构建项目
     - name: Build with Gradle
       run: ./gradlew build
