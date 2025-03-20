@@ -42,79 +42,25 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x ./gradlew
       
-    # 获取版本号
-    - name: Extract mod version
-      id: mod_version
-      run: |
-        echo "=== build.gradle content ==="
-        cat build.gradle
-        echo "=== end of build.gradle ==="
-    
-        # 更精确的版本提取，使用多种模式尝试
-        VERSION_PATTERN="version\s*=\s*['\"]([^'\"]*)['\"]"
-        MOD_VERSION=$(grep -P "$VERSION_PATTERN" build.gradle | head -1 | sed -E "s/$VERSION_PATTERN/\1/")
-    
-        # 如果上面的方法失败，尝试其他常见格式
-        if [ -z "$MOD_VERSION" ]; then
-          echo "Trying alternative pattern..."
-          VERSION_PATTERN="project.version\s*=\s*['\"]([^'\"]*)['\"]"
-          MOD_VERSION=$(grep -P "$VERSION_PATTERN" build.gradle | head -1 | sed -E "s/$VERSION_PATTERN/\1/")
-        fi
-    
-        # 如果仍然失败，尝试gradle properties命令
-        if [ -z "$MOD_VERSION" ]; then
-          echo "Trying gradle properties..."
-          MOD_VERSION=$(./gradlew properties | grep "version:" | awk '{print $2}')
-        fi
-    
-        # 确保我们有版本号
-        if [ -z "$MOD_VERSION" ]; then
-          echo "Failed to extract version from build.gradle!"
-          exit 1
-        fi
-    
-        echo "Extracted MOD_VERSION=$MOD_VERSION"
-        echo "mod_version=$MOD_VERSION" >> $GITHUB_OUTPUT
-    
     # 构建项目
     - name: Build with Gradle
       run: ./gradlew build
       
-    # 获取JAR文件并添加版本号到文件名后
-    - name: Process JAR file
-      id: process-jar
+    # 找到构建的JAR文件
+    - name: Find JAR file
+      id: find-jar
       run: |
-        mkdir -p jar-output
-    
-        # 获取主JAR文件
         JAR_FILE=$(find build/libs -name "*.jar" -not -name "*-sources.jar" -not -name "*-dev.jar" | head -n 1)
-    
+        
         if [ -z "$JAR_FILE" ]; then
           echo "No JAR file found!"
           exit 1
         fi
-    
-        # 获取版本号和原始文件名
-        MOD_VERSION="${{ steps.mod_version.outputs.mod_version }}"
-        ORIGINAL_FILENAME=$(basename "$JAR_FILE")
-    
-        echo "Found JAR file: $JAR_FILE"
-        echo "Original filename: $ORIGINAL_FILENAME"
-        echo "Using mod version: $MOD_VERSION"
-    
-        # 直接使用原始JAR文件，确保其版本号正确
-        OUTPUT_JAR="jar-output/$ORIGINAL_FILENAME"
-        cp "$JAR_FILE" "$OUTPUT_JAR"
-    
-        # 验证复制是否成功
-        if [ ! -f "$OUTPUT_JAR" ]; then
-          echo "Failed to copy JAR file!"
-          exit 1
-        fi
-    
-        echo "jar_path=$OUTPUT_JAR" >> $GITHUB_OUTPUT
         
-    # 生成Release版本标签
+        echo "Found JAR file: $JAR_FILE"
+        echo "jar_path=$JAR_FILE" >> $GITHUB_OUTPUT
+        
+    # 生成版本标签
     - name: Generate version
       id: generate_version
       run: |
@@ -122,12 +68,12 @@ jobs:
         SHORT_SHA=$(git rev-parse --short HEAD)
         echo "version=v${TIMESTAMP}-${SHORT_SHA}" >> $GITHUB_OUTPUT
       
-    # 创建Release
+    # 创建Release并上传JAR
     - name: Create Release and Upload JAR
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.generate_version.outputs.version }}
-        name: "Build ${{ steps.generate_version.outputs.version }} (Mod v${{ steps.mod_version.outputs.mod_version }})"
-        files: ${{ steps.process-jar.outputs.jar_path }}
+        name: "Build ${{ steps.generate_version.outputs.version }}"
+        files: ${{ steps.find-jar.outputs.jar_path }}
         draft: false
         prerelease: false
