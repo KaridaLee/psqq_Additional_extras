@@ -5,7 +5,6 @@ import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.registries.RegistryObject;
 import psqq_item.psqq_item.ModBlocks;
-import psqq_item.psqq_item.psqq_item;
 
 import java.util.Set;
 
@@ -16,8 +15,10 @@ public class ModBlockLootTables extends BlockLootSubProvider {
 
     @Override
     protected void generate() {
-        // 为您的方块添加标准掉落物
+        // 为方块添加标准掉落物
         dropSelf(ModBlocks.INFINITE_SINK.get());
+        dropSelf(ModBlocks.MOTOR_GENERATORS.get());
+        dropSelf(ModBlocks.POLYMERIC_ALLOY_BLOCK.get());
     }
 
     @Override

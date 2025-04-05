@@ -1,4 +1,4 @@
-package psqq_item.psqq_item;
+package psqq_item.psqq_item.fun;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
@@ -8,8 +8,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.server.level.ServerLevel;
 
-public class ChargedUnknownStoneItem extends Item {
-    public ChargedUnknownStoneItem(Properties properties) {
+public class ChargedUnknownStone extends Item {
+    public ChargedUnknownStone(Properties properties) {
         super(properties);
     }
 

@@ -1,2 +1,4 @@
-// 1.20.1	2025-03-11T20:40:24.4909483	Loot Tables
+// 1.20.1	2025-04-04T21:33:16.8088948	Loot Tables
 d4e69a0d2948d4bfe861d660b8cb3e02efeb29cc data/psqq_item/loot_tables/blocks/infinite_sink.json
+577c4e2a01f3a01211a078ff19c0bd87cab43577 data/psqq_item/loot_tables/blocks/motor_generators.json
+946e8ca709fa1ff506fd84005a62bc826bb9001f data/psqq_item/loot_tables/blocks/polymeric_alloy_block.json

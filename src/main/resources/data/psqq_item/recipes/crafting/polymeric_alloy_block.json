@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "###",
+    "###",
+    "###"
+  ],
+  "key": {
+    "#": {
+      "item": "psqq_item:polymeric_alloy"
+    }
+  },
+  "result": {
+    "item": "psqq_item:polymeric_alloy_block",
+    "count": 1
+  }
+}

@@ -5,11 +5,11 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import psqq_item.psqq_item.fun.ChargedUnknownStone;
 
 public class ModItems {
-    // 使用ExampleMod类中定义的MOD_ID
     public static final DeferredRegister<Item> ITEMS =
-            DeferredRegister.create(ForgeRegistries.ITEMS, psqq_item.MOD_ID);
+            DeferredRegister.create(ForgeRegistries.ITEMS, ModMain.MOD_ID);
 
     // 注册物品
     public static final RegistryObject<Item> OVERLOAD_ELECTRON_TUBE = ITEMS.register("overload_electron_tube",
@@ -24,11 +24,13 @@ public class ModItems {
     public static final RegistryObject<Item> OVERLOAD_SHEET_METAL = ITEMS.register("overload_sheet_metal",
             () -> new Item(new Item.Properties()));
 
-    // 替换为自定义的 ChargedUnknownStoneItem 类
     public static final RegistryObject<Item> CHARGED_UNKNOWN_STONE = ITEMS.register("charged_unknown_stone",
-            () -> new ChargedUnknownStoneItem(new Item.Properties()));
+            () -> new ChargedUnknownStone(new Item.Properties()));
 
     public static final RegistryObject<Item> INCOMPLETE_OVERLOAD_PRECISION_MECHANISM = ITEMS.register("incomplete_overload_precision_mechanism",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> POLYMERIC_ALLOY = ITEMS.register("polymeric_alloy",
             () -> new Item(new Item.Properties()));
 
     // 注册方法

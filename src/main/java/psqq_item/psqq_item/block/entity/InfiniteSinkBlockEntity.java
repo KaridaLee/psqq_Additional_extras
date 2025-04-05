@@ -20,7 +20,7 @@ import psqq_item.psqq_item.ModBlockEntities;
 
 public class InfiniteSinkBlockEntity extends BlockEntity {
 
-    // 创建一个自定义的IFluidHandler实现，提供真正的无限水
+    // 创建一个自定义的IFluidHandler实现，实现无限水
     private class InfiniteWaterHandler implements IFluidHandler {
 
         @Override
@@ -31,7 +31,7 @@ public class InfiniteSinkBlockEntity extends BlockEntity {
         @NotNull
         @Override
         public FluidStack getFluidInTank(int tank) {
-            // 特殊处理：创建一个特殊的FluidStack，其中amount为-1表示无限
+            // 创建一个特殊的FluidStack，其中amount为-1表示无限
             FluidStack infiniteWater = new FluidStack(Fluids.WATER, -1);
             return infiniteWater;
         }

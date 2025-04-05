@@ -1,5 +1,7 @@
 {
   "values": [
-    "psqq_item:infinite_sink"
+    "psqq_item:infinite_sink",
+    "psqq_item:motor_generators",
+    "psqq_item:polymeric_alloy_block"
   ]
 }

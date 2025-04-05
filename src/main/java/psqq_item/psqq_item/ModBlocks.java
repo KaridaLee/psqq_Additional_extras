@@ -10,23 +10,45 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import psqq_item.psqq_item.block.InfiniteSinkBlock;
+import psqq_item.psqq_item.block.MotorGeneratorsBlock;
+import psqq_item.psqq_item.block.PolymericAlloyBlock;
 import net.minecraft.world.level.material.PushReaction;
-import net.minecraft.world.level.material.MapColor; // 替代 MaterialColor
-import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.MapColor;
 
 public class ModBlocks {
     // 创建方块注册表
     public static final DeferredRegister<Block> BLOCKS =
-            DeferredRegister.create(ForgeRegistries.BLOCKS, psqq_item.MOD_ID);
+            DeferredRegister.create(ForgeRegistries.BLOCKS, ModMain.MOD_ID);
 
     public static final RegistryObject<Block> INFINITE_SINK = BLOCKS.register("infinite_sink",
             () -> new InfiniteSinkBlock(BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.METAL) // 使用 mapColor 代替直接指定 Material
+                    .mapColor(MapColor.METAL)
+                    .requiresCorrectToolForDrops()
+                    .strength(3.5f, 6.0f)
+                    .sound(SoundType.STONE)
+                    .noOcclusion()
+                    .pushReaction(PushReaction.NORMAL)
+            ));
+    // 添加 motor_generators 方块
+    public static final RegistryObject<Block> MOTOR_GENERATORS = BLOCKS.register("motor_generators",
+            () -> new MotorGeneratorsBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
                     .requiresCorrectToolForDrops()
                     .strength(3.5f, 6.0f)
                     .sound(SoundType.METAL)
                     .noOcclusion()
                     .pushReaction(PushReaction.NORMAL)
+            ));
+    // 添加 polymeric_alloy_block 方块
+    public static final RegistryObject<Block> POLYMERIC_ALLOY_BLOCK = BLOCKS.register("polymeric_alloy_block",
+            () -> new PolymericAlloyBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .requiresCorrectToolForDrops()
+                    .strength(3.5f, 6.0f)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()
+                    .pushReaction(PushReaction.NORMAL)
+                    .lightLevel((state) -> 14)
             ));
 
     // 注册方块对应的物品

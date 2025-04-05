@@ -1,0 +1,28 @@
+{
+  "type": "psqq_item:motor_generators",
+  "ingredients": [
+    {
+      "item": "psqq_item:polymeric_alloy_block"
+    },
+    {
+      "item": "ae2:singularity"
+    },
+    {
+      "item": "psqq_item:overload_precision_mechanism"
+    },
+    {
+      "item": "mekanism:pellet_antimatter"
+    },
+    {
+      "item": "create:mechanical_arm"
+    },
+    {
+      "item": "psqq_item:infinite_sink"
+    }
+  ],
+  "output": {
+    "item": "create:creative_motor"
+  },
+  "processing_time": 1728000,
+  "energy_per_tick": 3200000
+}

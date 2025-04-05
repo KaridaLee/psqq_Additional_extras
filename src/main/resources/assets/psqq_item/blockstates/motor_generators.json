@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "psqq_item:block/motor_generators" },
+    "facing=east": { "model": "psqq_item:block/motor_generators", "y": 90 },
+    "facing=south": { "model": "psqq_item:block/motor_generators", "y": 180 },
+    "facing=west": { "model": "psqq_item:block/motor_generators", "y": 270 }
+  }
+}

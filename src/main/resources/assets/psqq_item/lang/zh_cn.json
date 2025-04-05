@@ -5,6 +5,9 @@
   "item.psqq_item.overload_sheet_metal": "过载金属板",
   "item.psqq_item.charged_unknown_stone": "充能的未知石锥",
   "item.psqq_item.incomplete_overload_precision_mechanism": "预制过载精密构件",
+  "item.psqq_item.polymeric_alloy": "聚合合金",
+  "block.psqq_item.motor_generators": "马达生成器",
+  "block.psqq_item.polymeric_alloy_block": "聚合合金块",
   "block.psqq_item.infinite_sink": "无限水槽",
   "itemGroup.psqq_item": "破碎千秋 额外添加"
 }

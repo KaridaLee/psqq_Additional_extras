@@ -1,0 +1,10 @@
+{
+  "parent": "minecraft:block/orientable_with_bottom",
+  "textures": {
+    "bottom": "psqq_item:block/polymeric_alloy_block",
+    "front": "psqq_item:block/polymeric_alloy_block",
+    "particle": "psqq_item:block/polymeric_alloy_block",
+    "side": "psqq_item:block/polymeric_alloy_block",
+    "top": "psqq_item:block/polymeric_alloy_block"
+  }
+}
