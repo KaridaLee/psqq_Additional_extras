@@ -1,5 +1,5 @@
 Java Launcher: C:\Program Files\Java\jdk-17.0.2\bin\java.exe
-Arguments: '--in-jar, D:\IDEA\psqq_item\build\libs\psqq_item-1.1.0.jar, --out-jar, D:\IDEA\psqq_item\build\reobfJar\output.jar, --srg-in, D:\IDEA\psqq_item\build\createMcpToSrg\output.tsrg, --live'
+Arguments: '--in-jar, D:\IDEA\psqq_item\build\libs\psqq_item-1.1.2.jar, --out-jar, D:\IDEA\psqq_item\build\reobfJar\output.jar, --srg-in, D:\IDEA\psqq_item\build\createMcpToSrg\output.tsrg, --live'
 Classpath:
  - C:\.gradle\caches\forge_gradle\maven_downloader\net\md-5\SpecialSource\1.11.0\SpecialSource-1.11.0-shaded.jar
  - C:\.gradle\caches\forge_gradle\deobf_dependencies\mezz\jei\jei-1.20.1-common-api\15.10.0.39_mapped_official_1.20.1\jei-1.20.1-common-api-15.10.0.39_mapped_official_1.20.1.jar
