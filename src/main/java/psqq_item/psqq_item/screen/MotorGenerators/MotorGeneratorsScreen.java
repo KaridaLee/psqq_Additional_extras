@@ -54,16 +54,11 @@ public class MotorGeneratorsScreen extends AbstractContainerScreen<MotorGenerato
 
         // 渲染进度百分比文本
         if(menu.isCrafting()) {
-
             int textx = (width - imageWidth) / 2;
             int texty = (height - imageHeight) / 2;
 
-            // 计算进度百分比
-            float percentage = 0;
-            int maxProgress = menu.getDataValue(1);
-            if (maxProgress != 0) {
-                percentage = (float) menu.getDataValue(0) / maxProgress * 100;
-            }
+            // 使用新的方法获取百分比
+            float percentage = menu.getProgressPercentage();
 
             int textColor;
             if (percentage < 30) {

@@ -14,6 +14,7 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 import psqq_item.psqq_item.ModMain;
 
+
 public class MotorGeneratorsRecipe implements Recipe<SimpleContainer> {
     private final ResourceLocation id;
     private final ItemStack output;
@@ -32,41 +33,32 @@ public class MotorGeneratorsRecipe implements Recipe<SimpleContainer> {
 
     @Override
     public boolean matches(SimpleContainer pContainer, Level pLevel) {
-        if (pLevel.isClientSide()) {
-            return false;
+        // 创建一个临时容器的副本，避免修改原始容器
+        SimpleContainer tempContainer = new SimpleContainer(pContainer.getContainerSize());
+        for (int i = 0; i < pContainer.getContainerSize(); i++) {
+            tempContainer.setItem(i, pContainer.getItem(i).copy());
         }
 
-        // 统计容器中有多少非空物品
-        int nonEmptySlots = 0;
-        for (int i = 0; i < 6; i++) {
-            if (!pContainer.getItem(i).isEmpty()) {
-                nonEmptySlots++;
-            }
-        }
+        // 使用更严格的匹配逻辑
+        for (Ingredient ingredient : recipeItems) {
+            boolean foundMatch = false;
 
-        // 如果容器中的非空物品数量少于配方所需材料数量，直接返回false
-        if (nonEmptySlots < recipeItems.size()) {
-            return false;
-        }
-
-        // 检查物品是否匹配配方中的材料（无序匹配）
-        boolean[] matched = new boolean[recipeItems.size()];
-        int matchCount = 0;
-
-        for (int i = 0; i < 6; i++) {
-            ItemStack stack = pContainer.getItem(i);
-            if (stack.isEmpty()) continue;
-
-            for (int j = 0; j < recipeItems.size(); j++) {
-                if (!matched[j] && recipeItems.get(j).test(stack)) {
-                    matched[j] = true;
-                    matchCount++;
+            // 检查所有输入槽
+            for (int i = 0; i < 6; i++) {
+                ItemStack slotItem = tempContainer.getItem(i);
+                if (!slotItem.isEmpty() && ingredient.test(slotItem)) {
+                    tempContainer.setItem(i, ItemStack.EMPTY); // 标记已使用
+                    foundMatch = true;
                     break;
                 }
             }
+
+            if (!foundMatch) {
+                return false; // 如果任何材料未找到匹配，返回false
+            }
         }
 
-        return matchCount == recipeItems.size();
+        return true;
     }
 
     @Override
@@ -116,16 +108,14 @@ public class MotorGeneratorsRecipe implements Recipe<SimpleContainer> {
 
     // 定义配方类型
     public static class Type implements RecipeType<MotorGeneratorsRecipe> {
-        private Type() { }
+        private Type() {}
         public static final Type INSTANCE = new Type();
-        public static final String ID = "motor_generators";
+        public static final String ID = "motor_generators"; // 必须与JSON文件中的type字段匹配
     }
 
-    // 序列化器用于从JSON加载配方
     public static class Serializer implements RecipeSerializer<MotorGeneratorsRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        public static final ResourceLocation ID =
-                new ResourceLocation(ModMain.MOD_ID, "motor_generators");
+        public static final ResourceLocation ID = new ResourceLocation(ModMain.MOD_ID, "motor_generators");
 
         @Override
         public MotorGeneratorsRecipe fromJson(ResourceLocation pRecipeId, JsonObject pSerializedRecipe) {

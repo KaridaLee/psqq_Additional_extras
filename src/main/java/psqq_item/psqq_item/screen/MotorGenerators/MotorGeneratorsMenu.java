@@ -19,7 +19,7 @@ public class MotorGeneratorsMenu extends AbstractContainerMenu {
     private final ContainerData data;
 
     public MotorGeneratorsMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(2));
+        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(9));
     }
 
     public MotorGeneratorsMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -53,11 +53,15 @@ public class MotorGeneratorsMenu extends AbstractContainerMenu {
     }
 
     public int getScaledProgress() {
-        int progress = this.data.get(0);
-        int maxProgress = this.data.get(1);
+        int progress = getActualProgress();
+        int maxProgress = getActualMaxProgress();
         int progressArrowSize = 26; // 进度条长度
 
-        return maxProgress != 0 && progress != 0 ? progress * progressArrowSize / maxProgress : 0;
+        if (maxProgress <= 0) return 0;
+        progress = Math.min(progress, maxProgress);
+
+        // 使用double避免整数除法问题
+        return (int)((double)progress * progressArrowSize / maxProgress);
     }
 
     private static final int HOTBAR_SLOT_COUNT = 9;
@@ -123,19 +127,32 @@ public class MotorGeneratorsMenu extends AbstractContainerMenu {
 
     // 添加这个方法来获取精确的进度百分比（保留三位小数）
     public float getProgressPercentage() {
-        int progress = this.data.get(0);
-        int maxProgress = this.data.get(1);
+        int progress = getActualProgress();
+        int maxProgress = getActualMaxProgress();
 
         return maxProgress != 0 ? (float) progress / maxProgress * 100 : 0;
     }
 
-    // 在MotorGeneratorsMenu类中添加这个方法
     public int getDataValue(int index) {
-        return this.data.get(index);
+        if (index == 0) {
+            return getActualProgress();
+        } else if (index == 1) {
+            return getActualMaxProgress();
+        } else {
+            return this.data.get(index);
+        }
     }
 
     public ContainerData getData() {
         return this.data;
+    }
+
+    public int getActualProgress() {
+        return (this.data.get(1) << 16) | this.data.get(0);
+    }
+
+    public int getActualMaxProgress() {
+        return (this.data.get(3) << 16) | this.data.get(2);
     }
 }
 

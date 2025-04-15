@@ -3,7 +3,9 @@ package psqq_item.psqq_item.block.entity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
@@ -11,7 +13,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import java.util.Optional;
+import java.util.List;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -80,13 +82,22 @@ public class MotorGeneratorsBlockEntity extends BlockEntity implements MenuProvi
             @Override
             public int get(int index) {
                 return switch (index) {
-                    case 0 -> MotorGeneratorsBlockEntity.this.progress;
-                    case 1 -> MotorGeneratorsBlockEntity.this.maxProgress;
-                    case 2 -> MotorGeneratorsBlockEntity.this.energyStorage.getEnergyStored() & 0xFFFF; // 低16位
-                    case 3 -> (MotorGeneratorsBlockEntity.this.energyStorage.getEnergyStored() >> 16) & 0xFFFF; // 高16位
-                    case 4 -> MotorGeneratorsBlockEntity.this.energyStorage.getMaxEnergyStored() & 0xFFFF; // 低16位
-                    case 5 -> (MotorGeneratorsBlockEntity.this.energyStorage.getMaxEnergyStored() >> 16) & 0xFFFF; // 高16位
-                    case 6 -> MotorGeneratorsBlockEntity.this.energyPerTick;
+                    // 将progress拆分为高低位进行传输
+                    case 0 -> MotorGeneratorsBlockEntity.this.progress & 0xFFFF; // progress低16位
+                    case 1 -> (MotorGeneratorsBlockEntity.this.progress >> 16) & 0xFFFF; // progress高16位
+
+                    // 将maxProgress拆分为高低位进行传输
+                    case 2 -> MotorGeneratorsBlockEntity.this.maxProgress & 0xFFFF; // maxProgress低16位
+                    case 3 -> (MotorGeneratorsBlockEntity.this.maxProgress >> 16) & 0xFFFF; // maxProgress高16位
+
+                    // 能量存储相关数据
+                    case 4 -> MotorGeneratorsBlockEntity.this.energyStorage.getEnergyStored() & 0xFFFF; // 低16位
+                    case 5 -> (MotorGeneratorsBlockEntity.this.energyStorage.getEnergyStored() >> 16) & 0xFFFF; // 高16位
+                    case 6 -> MotorGeneratorsBlockEntity.this.energyStorage.getMaxEnergyStored() & 0xFFFF; // 低16位
+                    case 7 -> (MotorGeneratorsBlockEntity.this.energyStorage.getMaxEnergyStored() >> 16) & 0xFFFF; // 高16位
+
+                    // 能量消耗
+                    case 8 -> MotorGeneratorsBlockEntity.this.energyPerTick;
                     default -> 0;
                 };
             }
@@ -94,15 +105,34 @@ public class MotorGeneratorsBlockEntity extends BlockEntity implements MenuProvi
             @Override
             public void set(int index, int value) {
                 switch (index) {
-                    case 0 -> MotorGeneratorsBlockEntity.this.progress = value;
-                    case 1 -> MotorGeneratorsBlockEntity.this.maxProgress = value;
-                    case 6 -> MotorGeneratorsBlockEntity.this.energyPerTick = value;
+                    // 设置progress的高低位
+                    case 0 -> {
+                        int high = MotorGeneratorsBlockEntity.this.progress & 0xFFFF0000;
+                        MotorGeneratorsBlockEntity.this.progress = high | (value & 0xFFFF);
+                    }
+                    case 1 -> {
+                        int low = MotorGeneratorsBlockEntity.this.progress & 0xFFFF;
+                        MotorGeneratorsBlockEntity.this.progress = low | ((value & 0xFFFF) << 16);
+                    }
+
+                    // 设置maxProgress的高低位
+                    case 2 -> {
+                        int high = MotorGeneratorsBlockEntity.this.maxProgress & 0xFFFF0000;
+                        MotorGeneratorsBlockEntity.this.maxProgress = high | (value & 0xFFFF);
+                    }
+                    case 3 -> {
+                        int low = MotorGeneratorsBlockEntity.this.maxProgress & 0xFFFF;
+                        MotorGeneratorsBlockEntity.this.maxProgress = low | ((value & 0xFFFF) << 16);
+                    }
+
+                    // 能量消耗
+                    case 8 -> MotorGeneratorsBlockEntity.this.energyPerTick = value;
                 }
             }
 
             @Override
             public int getCount() {
-                return 7; // 增加数据项数量
+                return 9; // 增加到9个数据项
             }
         };
     }
@@ -136,6 +166,9 @@ public class MotorGeneratorsBlockEntity extends BlockEntity implements MenuProvi
         super.onLoad();
         lazyItemHandler = LazyOptional.of(() -> itemHandler);
         lazyEnergyHandler = LazyOptional.of(() -> energyStorage);
+
+        // 确保总能量需求与当前参数一致
+        this.totalEnergyRequired = this.maxProgress * this.energyPerTick;
     }
 
     @Override
@@ -152,6 +185,7 @@ public class MotorGeneratorsBlockEntity extends BlockEntity implements MenuProvi
         tag.putInt("motor_generators.max_progress", this.maxProgress);
         tag.putInt("energy", this.energyStorage.getEnergyStored());
         tag.putInt("energy_per_tick", this.energyPerTick);
+        tag.putInt("total_energy_required", this.totalEnergyRequired);
 
         super.saveAdditional(tag);
     }
@@ -162,26 +196,33 @@ public class MotorGeneratorsBlockEntity extends BlockEntity implements MenuProvi
         itemHandler.deserializeNBT(tag.getCompound("inventory"));
         progress = tag.getInt("motor_generators.progress");
 
-        // 加载自定义合成时间，如果存在
+        // 加载自定义合成时间
         if (tag.contains("motor_generators.max_progress")) {
             maxProgress = tag.getInt("motor_generators.max_progress");
         }
 
         // 加载能量值
         if (tag.contains("energy")) {
-            // 通过反射设置能量值，因为EnergyStorage没有公共的setter方法
             try {
                 java.lang.reflect.Field energyField = EnergyStorage.class.getDeclaredField("energy");
                 energyField.setAccessible(true);
                 energyField.setInt(energyStorage, tag.getInt("energy"));
             } catch (Exception e) {
-                // 处理可能的反射错误
+                // 忽略反射错误
             }
         }
 
-        // 加载每刻能量消耗
+        // 加载每tick能量消耗
         if (tag.contains("energy_per_tick")) {
             energyPerTick = tag.getInt("energy_per_tick");
+        }
+
+        // 加载总能量需求
+        if (tag.contains("total_energy_required")) {
+            totalEnergyRequired = tag.getInt("total_energy_required");
+        } else {
+            // 如果没有保存，则重新计算
+            totalEnergyRequired = maxProgress * energyPerTick;
         }
     }
 
@@ -199,25 +240,63 @@ public class MotorGeneratorsBlockEntity extends BlockEntity implements MenuProvi
             return;
         }
 
-        // 首先检查是否有配方，同时会更新energyPerTick
-        if (hasRecipe(entity)) {
-            // 检查是否有足够的能量
-            if (entity.energyStorage.getEnergyStored() >= entity.energyPerTick) {
-                // 尝试消耗能量
-                int extracted = entity.energyStorage.extractEnergy(entity.energyPerTick, false);
+        boolean changed = false;
 
-                if (extracted == entity.energyPerTick) {  // 确保消耗了正确数量的能量
+        // 缓存当前配方信息
+        if (entity.progress == 0) {
+            // 只在开始处理时检查配方
+            if (hasRecipe(entity)) {
+                // hasRecipe已经设置了maxProgress和energyPerTick
+                // 开始处理
+                if (entity.energyStorage.getEnergyStored() >= entity.energyPerTick) {
+                    entity.energyStorage.extractEnergy(entity.energyPerTick, false);
                     entity.progress++;
-                    setChanged(level, pos, state);
-
-                    if (entity.progress >= entity.maxProgress) {
-                        craftItem(entity);
-                    }
+                    changed = true;
                 }
             }
         } else {
-            entity.resetProgress();
-            setChanged(level, pos, state);
+            // 正在处理中
+            if (entity.energyStorage.getEnergyStored() >= entity.energyPerTick) {
+                entity.energyStorage.extractEnergy(entity.energyPerTick, false);
+                entity.progress++;
+                changed = true;
+
+                // 检查是否完成
+                if (entity.progress >= entity.maxProgress) {
+                    // 完成处理
+                    craftItem(entity);
+                    changed = true;
+                }
+            }
+        }
+
+        // 检查配方是否仍然有效
+        SimpleContainer inventory = new SimpleContainer(entity.itemHandler.getSlots());
+        for (int i = 0; i < entity.itemHandler.getSlots(); i++) {
+            inventory.setItem(i, entity.itemHandler.getStackInSlot(i));
+        }
+
+        boolean stillValid = false;
+        if (entity.progress > 0) {
+            // 检查配方是否仍然有效
+            List<MotorGeneratorsRecipe> recipes = level.getRecipeManager().getAllRecipesFor(MotorGeneratorsRecipe.Type.INSTANCE);
+            for (MotorGeneratorsRecipe recipe : recipes) {
+                if (recipe.matches(inventory, level)) {
+                    stillValid = true;
+                    break;
+                }
+            }
+
+            if (!stillValid) {
+                // 配方不再有效，重置进度
+                entity.resetProgress();
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            entity.setChanged();
+            level.sendBlockUpdated(pos, state, state, 3);
         }
     }
 
@@ -228,25 +307,41 @@ public class MotorGeneratorsBlockEntity extends BlockEntity implements MenuProvi
 
     private static boolean hasRecipe(MotorGeneratorsBlockEntity entity) {
         Level level = entity.level;
-        SimpleContainer inventory = new SimpleContainer(entity.itemHandler.getSlots());
+        if (level == null) return false;
 
+        SimpleContainer inventory = new SimpleContainer(entity.itemHandler.getSlots());
         for (int i = 0; i < entity.itemHandler.getSlots(); i++) {
             inventory.setItem(i, entity.itemHandler.getStackInSlot(i));
         }
 
-        // 使用配方系统查找匹配的配方
-        Optional<MotorGeneratorsRecipe> match = level.getRecipeManager()
-                .getRecipeFor(MotorGeneratorsRecipe.Type.INSTANCE, inventory, level);
+        // 直接获取配方实例，而不是通过类型查询
+        List<MotorGeneratorsRecipe> recipes = level.getRecipeManager().getAllRecipesFor(MotorGeneratorsRecipe.Type.INSTANCE);
 
-        if (match.isPresent()) {
-            // 更新实体的最大进度值为配方中指定的处理时间
-            entity.maxProgress = match.get().getProcessingTime();
-            // 更新实体的每tick能量消耗为配方中指定的值
-            entity.energyPerTick = match.get().getEnergyPerTick();
-            return canInsertItemIntoOutputSlot(inventory, match.get().getResultItem(level.registryAccess()));
+        for (MotorGeneratorsRecipe recipe : recipes) {
+            if (recipe.matches(inventory, level)) {
+                // 直接从配方实例获取处理时间和能量消耗
+                entity.maxProgress = recipe.getProcessingTime();
+                entity.energyPerTick = recipe.getEnergyPerTick();
+
+                return canInsertItemIntoOutputSlot(inventory, recipe.getResultItem(level.registryAccess()));
+            }
         }
 
         return false;
+    }
+
+    // 辅助方法，用于调试
+    private static String inventoryToString(SimpleContainer inventory) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            if (!inventory.getItem(i).isEmpty()) {
+                sb.append("Slot ").append(i).append(": ")
+                        .append(inventory.getItem(i).getItem().getDescriptionId())
+                        .append(" x").append(inventory.getItem(i).getCount())
+                        .append(", ");
+            }
+        }
+        return sb.toString();
     }
 
     private static boolean canInsertItemIntoOutputSlot(SimpleContainer inventory, ItemStack resultItem) {
@@ -266,43 +361,86 @@ public class MotorGeneratorsBlockEntity extends BlockEntity implements MenuProvi
 
     private static void craftItem(MotorGeneratorsBlockEntity entity) {
         Level level = entity.level;
-        SimpleContainer inventory = new SimpleContainer(entity.itemHandler.getSlots());
+        if (level == null || level.isClientSide()) return;
 
+        SimpleContainer inventory = new SimpleContainer(entity.itemHandler.getSlots());
         for (int i = 0; i < entity.itemHandler.getSlots(); i++) {
             inventory.setItem(i, entity.itemHandler.getStackInSlot(i));
         }
 
-        Optional<MotorGeneratorsRecipe> match = level.getRecipeManager()
-                .getRecipeFor(MotorGeneratorsRecipe.Type.INSTANCE, inventory, level);
+        // 直接遍历所有配方找匹配的
+        List<MotorGeneratorsRecipe> recipes = level.getRecipeManager().getAllRecipesFor(MotorGeneratorsRecipe.Type.INSTANCE);
 
-        if (match.isPresent()) {
-            // 消耗输入物品
-            MotorGeneratorsRecipe recipe = match.get();
-            NonNullList<Ingredient> ingredients = recipe.getIngredients();
-            boolean[] used = new boolean[6]; // 跟踪哪些槽位已被使用
+        for (MotorGeneratorsRecipe recipe : recipes) {
+            if (recipe.matches(inventory, level)) {
+                NonNullList<Ingredient> ingredients = recipe.getIngredients();
+                boolean[] used = new boolean[6];
 
-            // 找到匹配的槽位并消耗一个物品
-            for (Ingredient ingredient : ingredients) {
-                for (int i = 0; i < 6; i++) {
-                    if (!used[i] && ingredient.test(entity.itemHandler.getStackInSlot(i))) {
-                        entity.itemHandler.extractItem(i, 1, false);
-                        used[i] = true;
-                        break;
+                // 确保有足够的材料和空间
+                if (!hasEnoughMaterialsAndSpace(entity, recipe, level)) {
+                    return;
+                }
+
+                // 消耗材料
+                for (Ingredient ingredient : ingredients) {
+                    for (int i = 0; i < 6; i++) {
+                        if (!used[i] && ingredient.test(entity.itemHandler.getStackInSlot(i))) {
+                            entity.itemHandler.extractItem(i, 1, false);
+                            used[i] = true;
+                            break;
+                        }
                     }
                 }
+
+                // 添加输出物品
+                ItemStack result = recipe.getResultItem(level.registryAccess());
+                entity.itemHandler.insertItem(6, result.copy(), false);
+
+                // 重置进度
+                entity.resetProgress();
+                return;
             }
-
-            // 添加输出物品，传递 level.registryAccess() 参数
-            entity.itemHandler.setStackInSlot(6, new ItemStack(recipe.getResultItem(level.registryAccess()).getItem(),
-                    entity.itemHandler.getStackInSlot(6).getCount() + recipe.getResultItem(level.registryAccess()).getCount()));
-
-            entity.resetProgress();
         }
+    }
+
+    // 添加检查材料和空间的辅助方法
+    private static boolean hasEnoughMaterialsAndSpace(MotorGeneratorsBlockEntity entity, MotorGeneratorsRecipe recipe, Level level) {
+        NonNullList<Ingredient> ingredients = recipe.getIngredients();
+        SimpleContainer tempInventory = new SimpleContainer(entity.itemHandler.getSlots());
+
+        for (int i = 0; i < entity.itemHandler.getSlots(); i++) {
+            tempInventory.setItem(i, entity.itemHandler.getStackInSlot(i).copy());
+        }
+
+        boolean[] used = new boolean[6];
+
+        // 检查材料
+        for (Ingredient ingredient : ingredients) {
+            boolean found = false;
+            for (int i = 0; i < 6; i++) {
+                if (!used[i] && ingredient.test(tempInventory.getItem(i))) {
+                    tempInventory.getItem(i).shrink(1);
+                    used[i] = true;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) return false;
+        }
+
+        // 检查输出槽
+        ItemStack result = recipe.getResultItem(level.registryAccess());
+        ItemStack currentOutput = entity.itemHandler.getStackInSlot(6);
+
+        if (currentOutput.isEmpty()) return true;
+        if (!ItemStack.isSameItemSameTags(currentOutput, result)) return false;
+        return currentOutput.getCount() + result.getCount() <= currentOutput.getMaxStackSize();
     }
 
     private void resetProgress() {
         this.progress = 0;
-        // 不重置maxProgress，因为它应该由当前配方决定
+        setChanged();
+        syncData(); // 确保数据同步
     }
 
     // 设置合成时间的方法
@@ -316,6 +454,63 @@ public class MotorGeneratorsBlockEntity extends BlockEntity implements MenuProvi
         this.energyPerTick = energyPerTick;
         setChanged();
     }
+
+    @Override
+    public CompoundTag getUpdateTag() {
+        CompoundTag tag = new CompoundTag();
+        tag.putInt("motor_generators.progress", this.progress);
+        tag.putInt("motor_generators.max_progress", this.maxProgress);
+        tag.putInt("energy_per_tick", this.energyPerTick);
+        return tag;
+    }
+
+    public void syncData() {
+        if (level != null && !level.isClientSide()) {
+            // 设置更改标志
+            setChanged();
+
+            // 发送数据包
+            CompoundTag tag = new CompoundTag();
+            saveAdditional(tag);
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        if (tag.contains("motor_generators.progress")) {
+            this.progress = tag.getInt("motor_generators.progress");
+        }
+        if (tag.contains("motor_generators.max_progress")) {
+            this.maxProgress = tag.getInt("motor_generators.max_progress");
+        }
+        if (tag.contains("energy_per_tick")) {
+            this.energyPerTick = tag.getInt("energy_per_tick");
+        }
+    }
+
+    @Override
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
+        CompoundTag tag = pkt.getTag();
+        if (tag != null) {
+            // 确保加载所有重要数据
+            if (tag.contains("motor_generators.max_progress")) {
+                this.maxProgress = tag.getInt("motor_generators.max_progress");
+            }
+            if (tag.contains("energy_per_tick")) {
+                this.energyPerTick = tag.getInt("energy_per_tick");
+            }
+            if (tag.contains("motor_generators.progress")) {
+                this.progress = tag.getInt("motor_generators.progress");
+            }
+        }
+    }
+
 
     // 获取当前能量存储的方法
     public int getEnergyStored() {
